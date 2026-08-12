@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark" data-color="turquoise">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision Age Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* ===================================================
+           1. المتغيرات والألوان الرئيسية
+           =================================================== */
+        :root {
+            --primary-color: #1abc9c; /* التركوازي الافتراضي */
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --sidebar-bg: rgba(30, 41, 59, 0.95);
+            --text-color: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* الوضع الفاتح */
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --sidebar-bg: rgba(255, 255, 255, 0.95);
+            --text-color: #0f172a;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+        }
+
+        /* ألوان الثيمات المتاحة */
+        [data-color="turquoise"] { --primary-color: #1abc9c; }
+        [data-color="burgundy"]  { --primary-color: #800020; }
+        [data-color="green"]      { --primary-color: #2ecc71; }
+        [data-color="orange"]     { --primary-color: #e67e22; }
+        [data-color="blue"]       { --primary-color: #3498db; }
+        [data-color="brown"]      { --primary-color: #795548; }
+        [data-color="pink"]       { --primary-color: #e91e63; }
+        [data-color="purple"]     { --primary-color: #9b59b6; }
+        [data-color="gold"]       { --primary-color: #d4af37; }
+
+        /* ===================================================
+           2. التنسيقات العامة
+           =================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 35px 30px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===================================================
+           3. القائمة الجانبية (3 شحطات)
+           =================================================== */
+        .header-top {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        [dir="rtl"] .header-top {
+            justify-content: flex-end;
+        }
+
+        [dir="ltr"] .header-top {
+            justify-content: flex-end;
+        }
+
+        .menu-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            transition: transform 0.3s, border-color 0.3s, color 0.3s;
+            z-index: 101;
+        }
+
+        .menu-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 99;
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 300px;
+            height: 100%;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            padding: 30px 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1), left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        [dir="ltr"] .sidebar {
+            right: auto;
+            left: -320px;
+            border-left: none;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        [dir="ltr"] .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .sidebar-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+
+        .sidebar-option {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sidebar-option label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .icon-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .colors-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .color-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: auto;
+        }
+
+        .color-dot:hover, .color-dot.active {
+            transform: scale(1.2);
+            border-color: var(--text-color);
+        }
+
+        /* ===================================================
+           4. النصوص والمدخلات المقسمة
+           =================================================== */
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .inputs-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* تنسيق الصفوف المقسمة للخانة الواحدة */
+        .split-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .split-inputs select, 
+        .split-inputs input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 0.95rem;
+            outline: none;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+
+        .split-inputs select:focus, 
+        .split-inputs input:focus {
+            border-color: var(--primary-color);
+        }
+
+        /* إخفاء أسهم حقل الأرقام لضمان مظهر نظيف */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .main-btn {
+            margin-top: 10px;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .main-btn:hover {
+            opacity: 0.95;
+            transform: translateY(-2px);
+        }
+
+        /* ===================================================
+           5. عرض النتائج
+           =================================================== */
+        .results-container {
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px dashed var(--border-color);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .results-container.hidden {
+            display: none;
+        }
+
+        .results-container h2 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+            gap: 10px;
+        }
+
+        .card {
+            background-color: var(--bg-color);
+            padding: 15px 8px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary-color);
+        }
+
+        .card span {
+            display: block;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .card label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* تجاوب الشاشات الصغيرة */
+        @media (max-width: 480px) {
+            .split-inputs {
+                flex-wrap: wrap;
+            }
+            .split-inputs select, 
+            .split-inputs input {
+                min-width: 45%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu-overlay" class="menu-overlay"></div>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title" data-i18n="menuTitle">الإعدادات</span>
+            <button id="close-sidebar" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="sidebar-option">
+            <label data-i18n="themeLabel">مظهر الموقع:</label>
+            <button id="theme-btn" class="icon-btn">
+                <span id="theme-text">الوضع الفاتح</span>
+                <i class="fa-solid fa-sun" id="theme-icon"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-option">
+            <label data-i18n="langLabel">اللغة / Language:</label>
+            <button id="lang-btn" class="icon-btn">
+                <span>English</span>
+                <i class="fa-solid fa-globe"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-option">
+            <label data-i18n="chooseColor">لون الموقع:</label>
+            <div class="colors-grid">
+                <button class="color-dot active" data-color="turquoise" style="background: #1abc9c;" title="تركواز"></button>
+                <button class="color-dot" data-color="burgundy" style="background: #800020;" title="خمري"></button>
+                <button class="color-dot" data-color="green" style="background: #2ecc71;" title="أخضر"></button>
+                <button class="color-dot" data-color="orange" style="background: #e67e22;" title="برتقالي"></button>
+                <button class="color-dot" data-color="blue" style="background: #3498db;" title="أزرق"></button>
+                <button class="color-dot" data-color="brown" style="background: #795548;" title="بني"></button>
+                <button class="color-dot" data-color="pink" style="background: #e91e63;" title="زهري"></button>
+                <button class="color-dot" data-color="purple" style="background: #9b59b6;" title="بنفسجي"></button>
+                <button class="color-dot" data-color="gold" style="background: #d4af37;" title="ذهبي"></button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="container">
+        <header class="header-top">
+            <button id="open-sidebar" class="menu-btn" title="القائمة">
+                <i class="fa-solid fa-bars" id="menu-icon"></i>
+            </button>
+        </header>
+
+        <h1 data-i18n="title">حاسبة العمر الدقيقة</h1>
+        <p class="subtitle" data-i18n="subtitle">أدخل تاريخ ووقت ميلادك بدقة للحصول على عمرك لحظة بلحظة</p>
+
+        <form id="age-form" class="inputs-grid">
+            
+            <div class="input-group">
+                <label data-i18n="labelDate">تاريخ الميلاد:</label>
+                <div class="split-inputs">
+                    <input type="number" id="dob-year" min="1900" max="2026" placeholder="السنة" required>
+                    <select id="dob-month" required>
+                        <option value="" disabled selected data-i18n="phMonth">الشهر</option>
+                        </select>
+                    <select id="dob-day" required>
+                        <option value="" disabled selected data-i18n="phDay">اليوم</option>
+                        </select>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label data-i18n="labelTime">وقت الميلاد:</label>
+                <div class="split-inputs">
+                    <select id="dob-hour" required>
+                        <option value="" disabled selected data-i18n="phHour">الساعة</option>
+                    </select>
+                    <select id="dob-minute" required>
+                        <option value="" disabled selected data-i18n="phMinute">الدقيقة</option>
+                    </select>
+                    <select id="dob-second" required>
+                        <option value="" disabled selected data-i18n="phSecond">الثانية</option>
+                    </select>
+                    <select id="dob-ampm" required>
+                        <option value="AM" data-i18n="optAM">صباحاً (AM)</option>
+                        <option value="PM" data-i18n="optPM">مساءً (PM)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" id="calc-btn" class="main-btn" data-i18n="btnCalculate">احسب العمر الآن</button>
+        </form>
+
+        <div id="results" class="results-container hidden">
+            <h2 data-i18n="resultTitle">عمرك الدقيق الآن هو:</h2>
+            <div class="cards-grid">
+                <div class="card">
+                    <span id="years">0</span>
+                    <label data-i18n="unitYears">سنة</label>
+                </div>
+                <div class="card">
+                    <span id="months">0</span>
+                    <label data-i18n="unitMonths">شهر</label>
+                </div>
+                <div class="card">
+                    <span id="days">0</span>
+                    <label data-i18n="unitDays">يوم</label>
+                </div>
+                <div class="card">
+                    <span id="hours">0</span>
+                    <label data-i18n="unitHours">ساعة</label>
+                </div>
+                <div class="card">
+                    <span id="minutes">0</span>
+                    <label data-i18n="unitMinutes">دقيقة</label>
+                </div>
+                <div class="card">
+                    <span id="seconds">0</span>
+                    <label data-i18n="unitSeconds">ثانية</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===================================================
+        // 1. قاموس الترجمة
+        // ===================================================
+        const translations = {
+            ar: {
+                title: "حاسبة العمر الدقيقة",
+                subtitle: "أدخل تاريخ ووقت ميلادك بدقة للحصول على عمرك لحظة بلحظة",
+                menuTitle: "الإعدادات",
+                themeLabel: "مظهر الموقع:",
+                themeLight: "الوضع الفاتح",
+                themeDark: "الوضع الداكن",
+                langLabel: "اللغة / Language:",
+                chooseColor: "لون الموقع:",
+                labelDate: "تاريخ الميلاد (السنة / الشهر / اليوم):",
+                labelTime: "وقت الميلاد (الساعة / الدقيقة / الثانية):",
+                phMonth: "الشهر",
+                phDay: "اليوم",
+                phHour: "الساعة",
+                phMinute: "الدقيقة",
+                phSecond: "الثانية",
+                optAM: "صباحاً (AM)",
+                optPM: "مساءً (PM)",
+                btnCalculate: "احسب العمر الآن",
+                resultTitle: "عمرك الدقيق الآن هو:",
+                unitYears: "سنة",
+                unitMonths: "شهر",
+                unitDays: "يوم",
+                unitHours: "ساعة",
+                unitMinutes: "دقيقة",
+                unitSeconds: "ثانية"
+            },
+            en: {
+                title: "Precision Age Calculator",
+                subtitle: "Enter your exact birth date and time to see your age updated live",
+                menuTitle: "Settings",
+                themeLabel: "Theme Mode:",
+                themeLight: "Light Mode",
+                themeDark: "Dark Mode",
+                langLabel: "Language / اللغة:",
+                chooseColor: "Theme Color:",
+                labelDate: "Birth Date (Year / Month / Day):",
+                labelTime: "Birth Time (Hour / Minute / Second):",
+                phMonth: "Month",
+                phDay: "Day",
+                phHour: "Hour",
+                phMinute: "Minute",
+                phSecond: "Second",
+                optAM: "AM",
+                optPM: "PM",
+                btnCalculate: "Calculate Age Now",
+                resultTitle: "Your Exact Age Right Now:",
+                unitYears: "Years",
+                unitMonths: "Months",
+                unitDays: "Days",
+                unitHours: "Hours",
+                unitMinutes: "Minutes",
+                unitSeconds: "Seconds"
+            }
+        };
+
+        let currentLang = 'ar';
+        let timerInterval = null;
+
+        // ===================================================
+        // 2. تعبئة القوائم التلقائية (الأيام، الأشهر، الساعات، الدقائق، الثواني)
+        // ===================================================
+        const daySelect = document.getElementById('dob-day');
+        const monthSelect = document.getElementById('dob-month');
+        const hourSelect = document.getElementById('dob-hour');
+        const minuteSelect = document.getElementById('dob-minute');
+        const secondSelect = document.getElementById('dob-second');
+
+        // تعبئة الأشهر (1-12)
+        for (let i = 1; i <= 12; i++) {
+            monthSelect.innerHTML += `<option value="${i}">${i}</option>`;
+        }
+
+        // تعبئة الأيام (1-31)
+        for (let i = 1; i <= 31; i++) {
+            daySelect.innerHTML += `<option value="${i}">${i}</option>`;
+        }
+
+        // تعبئة الساعات (1-12)
+        for (let i = 1; i <= 12; i++) {
+            hourSelect.innerHTML += `<option value="${i}">${i}</option>`;
+        }
+
+        // تعبئة الدقائق والثواني (0-59)
+        for (let i = 0; i < 60; i++) {
+            const val = i < 10 ? '0' + i : i;
+            minuteSelect.innerHTML += `<option value="${i}">${val}</option>`;
+            secondSelect.innerHTML += `<option value="${i}">${val}</option>`;
+        }
+
+        // تعيين قيم افتراضية حقيقية لوقت الميلاد عند فتح الصفحة
+        minuteSelect.value = "0";
+        secondSelect.value = "0";
+
+        // ===================================================
+        // 3. التحكم بالقائمة الجانبية (3 شحطات)
+        // ===================================================
+        const openSidebarBtn = document.getElementById('open-sidebar');
+        const closeSidebarBtn = document.getElementById('close-sidebar');
+        const sidebar = document.getElementById('sidebar');
+        const menuOverlay = document.getElementById('menu-overlay');
+        const menuIcon = document.getElementById('menu-icon');
+
+        function toggleMenu() {
+            sidebar.classList.toggle('active');
+            menuOverlay.classList.toggle('active');
+            openSidebarBtn.classList.toggle('active');
+            menuIcon.className = sidebar.classList.contains('active') ? "fa-solid fa-xmark" : "fa-solid fa-bars";
+        }
+
+        openSidebarBtn.addEventListener('click', toggleMenu);
+        closeSidebarBtn.addEventListener('click', toggleMenu);
+        menuOverlay.addEventListener('click', toggleMenu);
+
+        // ===================================================
+        // 4. التحكم باللغة
+        // ===================================================
+        const langBtn = document.getElementById('lang-btn');
+
+        langBtn.addEventListener('click', () => {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            document.documentElement.lang = currentLang;
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            
+            langBtn.querySelector('span').textContent = currentLang === 'ar' ? 'English' : 'عربي';
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    el.textContent = translations[currentLang][key];
+                }
+            });
+
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            document.getElementById('theme-text').textContent = currentTheme === 'dark' 
+                ? translations[currentLang].themeLight 
+                : translations[currentLang].themeDark;
+        });
+
+        // ===================================================
+        // 5. التحكم بالوضع الداكن والفاتح
+        // ===================================================
+        const themeBtn = document.getElementById('theme-btn');
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            themeIcon.className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            themeText.textContent = newTheme === 'dark' 
+                ? translations[currentLang].themeLight 
+                : translations[currentLang].themeDark;
+        });
+
+        // ===================================================
+        // 6. التحكم بألوان الثيم
+        // ===================================================
+        const colorDots = document.querySelectorAll('.color-dot');
+
+        colorDots.forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                const selectedColor = e.target.getAttribute('data-color');
+                document.documentElement.setAttribute('data-color', selectedColor);
+
+                colorDots.forEach(d => d.classList.remove('active'));
+                e.target.classList.add('active');
+            });
+        });
+
+        // ===================================================
+        // 7. حساب العمر الدقيق والتحديث التلقائي
+        // ===================================================
+        const ageForm = document.getElementById('age-form');
+        const resultsContainer = document.getElementById('results');
+
+        ageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const year = parseInt(document.getElementById('dob-year').value);
+            const month = parseInt(document.getElementById('dob-month').value) - 1; // الأشهر تبدأ من 0 في JS
+            const day = parseInt(document.getElementById('dob-day').value);
+
+            let hour = parseInt(document.getElementById('dob-hour').value);
+            const minute = parseInt(document.getElementById('dob-minute').value);
+            const second = parseInt(document.getElementById('dob-second').value);
+            const ampm = document.getElementById('dob-ampm').value;
+
+            // تحويل نظام 12 ساعة إلى 24 ساعة
+            if (ampm === 'PM' && hour < 12) hour += 12;
+            if (ampm === 'AM' && hour === 12) hour = 0;
+
+            const birthDate = new Date(year, month, day, hour, minute, second);
+
+            if (isNaN(birthDate.getTime())) {
+                alert(currentLang === 'ar' ? 'الرجاء إدخال تاريخ ووقت صحيحين!' : 'Please enter a valid date and time!');
+                return;
+            }
+
+            if (timerInterval) clearInterval(timerInterval);
+
+            resultsContainer.classList.remove('hidden');
+
+            updateAge(birthDate);
+            timerInterval = setInterval(() => updateAge(birthDate), 1000);
+        });
+
+        function updateAge(birthDate) {
+            const now = new Date();
+
+            if (now < birthDate) {
+                alert(currentLang === 'ar' ? 'تاريخ الميلاد لا يمكن أن يكون في المستقبل!' : 'Birth date cannot be in the future!');
+                clearInterval(timerInterval);
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+
+            let years = now.getFullYear() - birthDate.getFullYear();
+            let months = now.getMonth() - birthDate.getMonth();
+            let days = now.getDate() - birthDate.getDate();
+
+            if (days < 0) {
+                months--;
+                const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+                days += prevMonth.getDate();
+            }
+
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            let hours = now.getHours() - birthDate.getHours();
+            let minutes = now.getMinutes() - birthDate.getMinutes();
+            let seconds = now.getSeconds() - birthDate.getSeconds();
+
+            if (seconds < 0) {
+                seconds += 60;
+                minutes--;
+            }
+
+            if (minutes < 0) {
+                minutes += 60;
+                hours--;
+            }
+
+            if (hours < 0) {
+                hours += 24;
+                days--;
+                if (days < 0) {
+                    months--;
+                    const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+                    days += prevMonth.getDate();
+                    if (months < 0) {
+                        years--;
+                        months += 12;
+                    }
+                }
+            }
+
+            document.getElementById('years').textContent = years;
+            document.getElementById('months').textContent = months;
+            document.getElementById('days').textContent = days;
+            document.getElementById('hours').textContent = hours;
+            document.getElementById('minutes').textContent = minutes;
+            document.getElementById('seconds').textContent = seconds;
+        }
+    </script>
+</body>
+</html>
